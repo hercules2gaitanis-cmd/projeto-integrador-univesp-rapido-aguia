@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rápido Águia - v2.5</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; width: 100%; max-width: 500px; padding: 25px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border-top: 6px solid #d32f2f; }
+        .header { text-align: center; margin-bottom: 20px; }
+        h2 { color: #d32f2f; margin: 0; }
+        .subtitle { color: #666; font-size: 0.85em; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .btn-group { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 20px; }
+        button { padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; background-color: #6c757d; color: white; }
+        
+        #resultado { margin-top: 20px; padding: 15px; border-radius: 12px; display: none; text-align: center; border: 2px solid #2e7d32; background-color: #e8f5e9; }
+        .res-container { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; gap: 5px; }
+        .res-box { flex: 1; border-right: 1px solid #c8e6c9; }
+        .res-box:last-child { border-right: none; }
+        .res-valor { font-size: 1.6em; display: block; color: #2e7d32; font-weight: 900; }
+        .res-label { font-size: 0.65em; font-weight: bold; color: #333; text-transform: uppercase; }
+        
+        .alerta-peso { background: #fff9c4; border: 1px solid #fbc02d; padding: 10px; border-radius: 8px; font-size: 0.85em; margin-top: 10px; color: #615100; text-align: left; }
+        .footer-obs { font-size: 0.75em; color: #888; margin-top: 15px; text-align: center; }
+    </style>
+</head>
+<body>
+
+
+<div class="card">
+    <div class="header">
+        <h2>Rápido Águia 🦅</h2>
+        <p class="subtitle">Logística Automática - Hyundai HR</p>
+    </div>
+
+
+    <div class="form-group">
+        <label>Selecione o Baú:</label>
+        <select id="veiculo" onchange="calcular()">
+            <option value="10.0">Padrão Compacto (10 m³)</option>
+            <option value="11.0" selected>Padrão Médio (11 m³)</option>
+            <option value="13.5">Padrão Maior (13.5 m³)</option>
+        </select>
+    </div>
+
+
+    <div class="form-group">
+        <label>Caixa (cm) [C x L x A]:</label>
+        <div class="grid-3">
+            <input type="number" id="comp" placeholder="C" oninput="calcular()">
+            <input type="number" id="larg" placeholder="L" oninput="calcular()">
+            <input type="number" id="alt" placeholder="A" oninput="calcular()">
+        </div>
+    </div>
+
+
+    <div class="grid-3">
+        <div class="form-group" style="grid-column: span 2;">
+            <label>Peso Unitário (kg):</label>
+            <input type="number" id="pesoUnit" placeholder="Ex: 5" oninput="calcular()">
+        </div>
+        <div class="form-group">
+            <label>Margem (%):</label>
+            <input type="number" id="margem" value="10" oninput="calcular()">
+        </div>
+    </div>
+
+
+    <div class="btn-group">
+        <button onclick="limpar()">LIMPAR DADOS</button>
+    </div>
+
+
+    <div id="resultado">
+        <span style="font-size: 0.85em; font-weight: bold; color: #1b5e20;">CARGA MÁXIMA PARA ESTA VIAGEM</span>
+        <div class="res-container">
+            <div class="res-box">
+                <span class="res-valor" id="res_unidades">0</span>
+                <span class="res-label">Unidades</span>
+            </div>
+            <div class="res-box">
+                <span class="res-valor" id="res_peso">0</span>
+                <span class="res-label">Peso (kg)</span>
+            </div>
+            <div class="res-box">
+                <span class="res-valor" id="res_volume">0</span>
+                <span class="res-label">Volume (m³)</span>
+            </div>
+        </div>
+        <div id="alerta_container"></div>
+    </div>
+
+
+    <p class="footer-obs">Capacidade Técnica: 1.500kg Líquidos.<br>Projeto Integrador - Univesp 2026</p>
+</div>
+
+
+<script>
+function calcular() {
+    const volBau = parseFloat(document.getElementById('veiculo').value);
+    const c = parseFloat(document.getElementById('comp').value) / 100; 
+    const l = parseFloat(document.getElementById('larg').value) / 100;
+    const a = parseFloat(document.getElementById('alt').value) / 100;
+    const pesoUnit = parseFloat(document.getElementById('pesoUnit').value) || 0;
+    const margemVal = parseFloat(document.getElementById('margem').value);
+    const margem = margemVal / 100;
+
+
+    // Só exibe se as medidas básicas estiverem preenchidas
+    if (!c || !l || !a) {
+        document.getElementById('resultado').style.display = "none";
+        return;
+    }
+
+
+    const volCaixa = c * l * a;
+    const volDisponivelReal = volBau * (1 - margem);
+    const qtdVolume = Math.floor(volDisponivelReal / volCaixa);
+    const qtdPeso = pesoUnit > 0 ? Math.floor(1500 / pesoUnit) : Infinity;
+
+
+    const resultadoFinal = Math.min(qtdVolume, qtdPeso);
+    const pesoTotalFinal = (resultadoFinal * pesoUnit).toFixed(1);
+    const volumeTotalOcupado = (resultadoFinal * volCaixa).toFixed(2);
+
+
+    document.getElementById('resultado').style.display = "block";
+    document.getElementById('res_unidades').innerText = resultadoFinal;
+    document.getElementById('res_peso').innerText = pesoTotalFinal;
+    document.getElementById('res_volume').innerText = volumeTotalOcupado;
+
+
+    const alertaCont = document.getElementById('alerta_container');
+    if (qtdPeso < qtdVolume) {
+        alertaCont.innerHTML = `<div class="alerta-peso">⚠️ <strong>Limitado pelo peso (1.500kg)</strong>.</div>`;
+    } else {
+        alertaCont.innerHTML = `<div class="alerta-peso" style="background:#e8f5e9; border-color:#2e7d32; color:#1b5e20;">✅ <strong>Capacidade volumétrica atingida</strong>.</div>`;
+    }
+}
+
+
+function limpar() {
+    document.getElementById('comp').value = '';
+    document.getElementById('larg').value = '';
+    document.getElementById('alt').value = '';
+    document.getElementById('pesoUnit').value = '';
+    document.getElementById('resultado').style.display = 'none';
+}
+</script>
+</body>
+</html>
